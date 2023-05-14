@@ -11,34 +11,40 @@ import firebase_admin
 from firebase_admin import credentials, db
 from firebase_admin import storage 
 
-labels = ['GarlicMites', 'LeafMiner']
-number_img= 1
 
 IMAGES_PATH = os.path.join('D:','AI','Object_Detection','captured_images')
-
 if not os.path.exists(IMAGES_PATH):
     if os.name=='nt':
         os.mkdir (IMAGES_PATH)
 
-for label in labels:
-    path=os.path.join(IMAGES_PATH, label)
-    if not os.path.exists(path):
-        os.mkdir (path)
+# Set up camera
+cap = cv2.VideoCapture(0)
 
-for label in labels:
-    cap = cv2.VideoCapture(0)
-    print('Collecting images for {}'.format(label))
-    time.sleep(10)
-    for imgnum in range(number_img):
-        print('Collecting image {}'.format(imgnum))
-        ret, frame = cap.read()
-        imgname = os.path.join(IMAGES_PATH,label,label+'.'+'{}.jpg'.format(str(uuid.uuid1())))
-        cv2.imwrite(imgname, frame)
-        cv2.imshow('frame', frame)
-        time.sleep(2)
+# Counter for image filenames
+image_counter = 1
 
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+while True:
+    # Capture frame from camera
+    ret, frame = cap.read()
+
+    # Display the frame
+    cv2.imshow('frame', frame)
+
+    # Check for key press to trigger image capture
+    if cv2.waitKey(1) == ord('c'):
+        # Save the captured image
+        image_path = os.path.join(IMAGES_PATH ,f'image_{image_counter}.jpg')
+        cv2.imwrite(image_path, frame)
+        print(f'Saved image: {image_path}')
+
+        # Increment the image counter
+        image_counter += 1
+
+    # Check for exit key
+    if cv2.waitKey(1) == ord('q'):
+        break
+
+# Release resources
 cap.release()
 cv2.destroyAllWindows()
 
@@ -156,12 +162,10 @@ for image_path in images:
       
     image_fn = os.path.basename(image_path)
     image_savepath = os.path.join(RESULTS_DIR,image_fn)
-        
     base_fn, ext = os.path.splitext(image_fn)
     txt_result_fn = base_fn +'.txt'
     txt_savepath = os.path.join(RESULTS_DIR,txt_result_fn)
 
-      
     cv2.imwrite(image_savepath, image)
 
         
@@ -184,7 +188,7 @@ firebase_folder_path = "AI"
 bucket = storage.bucket()
 for filename in os.listdir(local_folder_path):
     if filename.endswith(".jpg"):  
-        local_file_path = os.path.join(local_folder_path, filename)
+        local_file_path = os.path.join(local_folder_path,filename)
         firebase_file_path = f"{firebase_folder_path}/{filename}"
 
         blob = bucket.blob(firebase_file_path)
