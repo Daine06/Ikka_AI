@@ -17,34 +17,46 @@ if not os.path.exists(IMAGES_PATH):
     if os.name=='nt':
         os.mkdir (IMAGES_PATH)
 
-# Set up camera
+#use this code if you want automated image capturing
+#for label in labels:
+    #cap = cv2.VideoCapture(0)
+    #print('Collecting images for {}'.format(label))
+    #time.sleep(10)
+    #for imgnum in range(number_img):
+        #print('Collecting image {}'.format(imgnum))
+        #ret, frame = cap.read()
+        #imgname = os.path.join(IMAGES_PATH,label,label+'.'+'{}.jpg'.format(str(uuid.uuid1())))
+        #cv2.imwrite(imgname, frame)
+        #cv2.imshow('frame', frame)
+        #time.sleep(2)
+
+        #if cv2.waitKey(1) & 0xFF == ord('q'):
+            #break
+#cap.release()
+#cv2.destroyAllWindows()
+
+
+#use this code if you want to let the user take picture
+
 cap = cv2.VideoCapture(0)
 
-# Counter for image filenames
 image_counter = 1
 
 while True:
-    # Capture frame from camera
+    
     ret, frame = cap.read()
 
-    # Display the frame
     cv2.imshow('frame', frame)
 
-    # Check for key press to trigger image capture
     if cv2.waitKey(1) == ord('c'):
-        # Save the captured image
-        image_path = os.path.join(IMAGES_PATH ,f'image_{image_counter}.jpg')
+        image_path = os.path.join(IMAGES_PATH ,f'image{image_counter}.jpg'.format(str(uuid.uuid1)))
         cv2.imwrite(image_path, frame)
         print(f'Saved image: {image_path}')
-
-        # Increment the image counter
         image_counter += 1
 
-    # Check for exit key
     if cv2.waitKey(1) == ord('q'):
         break
 
-# Release resources
 cap.release()
 cv2.destroyAllWindows()
 
@@ -159,19 +171,33 @@ for image_path in images:
     if cv2.waitKey(0) == ord('q'):
         break
 
-      
-    image_fn = os.path.basename(image_path)
-    image_savepath = os.path.join(RESULTS_DIR,image_fn)
-    base_fn, ext = os.path.splitext(image_fn)
-    txt_result_fn = base_fn +'.txt'
-    txt_savepath = os.path.join(RESULTS_DIR,txt_result_fn)
+    detection_folder = os.path.join(RESULTS_PATH,'infected_images')
+    os.makedirs(detection_folder, exist_ok=True)
 
-    cv2.imwrite(image_savepath, image)
+    no_detection_folder = os.path.join(RESULTS_PATH,'no_detection_images')
+    os.makedirs(no_detection_folder, exist_ok=True)
+    #if you want to create folders for detected and no detected images, use this code
+    if detections:
+        detection_image_path = os.path.join(detection_folder, os.path.basename(image_path))
+        cv2.imwrite(detection_image_path, image)
+        print(f'Saved image with detected classes: {detection_image_path}')
+    if not detections:
+        no_detection_image_path = os.path.join(no_detection_folder, os.path.basename(image_path))
+        cv2.imwrite(no_detection_image_path, image)
+        print(f'Saved image without detected classes: {no_detection_image_path}') 
 
-        
-    with open(txt_savepath,'w') as f:
-        for detection in detections:
-            f.write('%s %.4f %d %d %d %d\n' % (detection[0], detection[1], detection[2], detection[3], detection[4], detection[5]))
+    #If you want only images but no folders, use this code
+    #image_fn = os.path.basename(image_path)
+    #image_savepath = os.path.join(RESULTS_PATH,image_fn)
+    #base_fn, ext = os.path.splitext(image_fn)
+    #txt_result_fn = base_fn +'.txt'
+    #txt_savepath = os.path.join(RESULTS_PATH,txt_result_fn)
+
+    #cv2.imwrite(image_savepath, image)
+
+    #with open(txt_savepath,'w') as f:
+        #for detection in detections:
+            #f.write('%s %.4f %d %d %d %d\n' % (detection[0], detection[1], detection[2], detection[3], detection[4], detection[5]))
         
 cv2.destroyAllWindows()
 
@@ -185,6 +211,7 @@ firebase_admin.initialize_app(cred, {
 local_folder_path = RESULTS_DIR
 firebase_folder_path = "AI"
 
+#If you used the image only code, use this
 bucket = storage.bucket()
 for filename in os.listdir(local_folder_path):
     if filename.endswith(".jpg"):  
@@ -195,4 +222,25 @@ for filename in os.listdir(local_folder_path):
         blob.upload_from_filename(local_file_path)
 
         print(f"Uploaded {filename} to Firebase Storage.")
+
+#If you used the folder code, use this (not finished)
+#if os.path.exists(detection_folder_path):
+    #firebase_folder_path_detected = "AI/detection_folder"
+    #for filename_yes in os.listdir(detection_folder):
+        #local_file_path = os.path.join(detection_folder,filename_yes)
+        #firebase_file_path = f"{firebase_folder_path_detected}/{filename_yes}"
+        #blob = bucket.blob(firebase_file_path)
+        #blob.upload_from_filename(local_file_path)
+       # print(f"Uploaded {filename_yes} to Firebase Storage.")
+#if os.path.exists(no_detection_folder_path):
+    #firebase_folder_path_no_detected = "AI/no_detection_folder"
+    #for filename_no in os.listdir(no_detection_folder):
+        #local_file_path = os.path.join(no_detection_folder,filename_no)
+        #firebase_file_path = f"{firebase_folder_path_no_detected}/{filename_no}"
+        #blob = bucket.blob(firebase_file_path)
+        #blob.upload_from_filename(local_file_path)
+        #print(f"Uploaded {filename_no} to Firebase Storage.")
+
+   
+        
 
