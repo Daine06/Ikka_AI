@@ -2,9 +2,7 @@ import cv2
 import os 
 import time 
 import uuid
-#import argparse
 import numpy as np
-#import sys
 import glob
 import importlib.util
 import firebase_admin
@@ -17,26 +15,10 @@ if not os.path.exists(IMAGES_PATH):
     if os.name=='nt':
         os.mkdir (IMAGES_PATH)
 
-#use this code if you want automated image capturing
-#for label in labels:
-    #cap = cv2.VideoCapture(0)
-    #print('Collecting images for {}'.format(label))
-    #time.sleep(10)
-    #for imgnum in range(number_img):
-        #print('Collecting image {}'.format(imgnum))
-        #ret, frame = cap.read()
-        #imgname = os.path.join(IMAGES_PATH,label,label+'.'+'{}.jpg'.format(str(uuid.uuid1())))
-        #cv2.imwrite(imgname, frame)
-        #cv2.imshow('frame', frame)
-        #time.sleep(2)
-
-        #if cv2.waitKey(1) & 0xFF == ord('q'):
-            #break
-#cap.release()
-#cv2.destroyAllWindows()
 
 
-#use this code if you want to let the user take picture
+
+
 
 cap = cv2.VideoCapture(0)
 
@@ -138,9 +120,9 @@ for image_path in images:
     interpreter.invoke()
 
     
-    boxes = interpreter.get_tensor(output_details[boxes_idx]['index'])[0] # Bounding box coordinates of detected objects
-    classes = interpreter.get_tensor(output_details[classes_idx]['index'])[0] # Class index of detected objects
-    scores = interpreter.get_tensor(output_details[scores_idx]['index'])[0] # Confidence of detected objects
+    boxes = interpreter.get_tensor(output_details[boxes_idx]['index'])[0] 
+    classes = interpreter.get_tensor(output_details[classes_idx]['index'])[0] 
+    scores = interpreter.get_tensor(output_details[scores_idx]['index'])[0] 
 
     detections = []
 
@@ -148,8 +130,7 @@ for image_path in images:
     for i in range(len(scores)):
         if ((scores[i] > min_conf_threshold) and (scores[i] <= 1.0)):
 
-            # Get bounding box coordinates and draw box
-            # Interpreter can return coordinates that are outside of image dimensions, need to force them to be within image using max() and min()
+       
             ymin = int(max(1,(boxes[i][0] * imH)))
             xmin = int(max(1,(boxes[i][1] * imW)))
             ymax = int(min(imH,(boxes[i][2] * imH)))
@@ -211,7 +192,7 @@ firebase_admin.initialize_app(cred, {
 local_folder_path = RESULTS_DIR
 firebase_folder_path = "AI"
 
-#If you used the image only code, use this
+
 bucket = storage.bucket()
 for filename in os.listdir(local_folder_path):
     if filename.endswith(".jpg"):  
@@ -223,23 +204,6 @@ for filename in os.listdir(local_folder_path):
 
         print(f"Uploaded {filename} to Firebase Storage.")
 
-#If you used the folder code, use this (not finished)
-#if os.path.exists(detection_folder_path):
-    #firebase_folder_path_detected = "AI/detection_folder"
-    #for filename_yes in os.listdir(detection_folder):
-        #local_file_path = os.path.join(detection_folder,filename_yes)
-        #firebase_file_path = f"{firebase_folder_path_detected}/{filename_yes}"
-        #blob = bucket.blob(firebase_file_path)
-        #blob.upload_from_filename(local_file_path)
-       # print(f"Uploaded {filename_yes} to Firebase Storage.")
-#if os.path.exists(no_detection_folder_path):
-    #firebase_folder_path_no_detected = "AI/no_detection_folder"
-    #for filename_no in os.listdir(no_detection_folder):
-        #local_file_path = os.path.join(no_detection_folder,filename_no)
-        #firebase_file_path = f"{firebase_folder_path_no_detected}/{filename_no}"
-        #blob = bucket.blob(firebase_file_path)
-        #blob.upload_from_filename(local_file_path)
-        #print(f"Uploaded {filename_no} to Firebase Storage.")
 
    
         
